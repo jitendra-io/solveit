@@ -1,5 +1,5 @@
 import React from 'react';
-import { Settings, RotateCcw, Eye } from 'lucide-react';
+import { Settings, RotateCcw, Eye, Home } from 'lucide-react';
 import { DIFFICULTIES } from '../constants/gameConfig';
 
 export default function BottomDock({
@@ -7,6 +7,7 @@ export default function BottomDock({
   onSelectDifficulty,
   onRestart,
   onOpenSettings,
+  onReturnHome,
   onPeekStart,
   onPeekEnd,
   isPeeking,
@@ -69,6 +70,16 @@ export default function BottomDock({
           className="p-2 rounded-xl bg-black/30 border border-white/10 text-sky-400 hover:bg-white/10 transition-all cursor-pointer active:scale-90"
         >
           <RotateCcw className="w-4 h-4" />
+        </button>
+
+        {/* Home / Menu Button */}
+        <button
+          type="button"
+          onClick={onReturnHome}
+          title="Return to Main Menu"
+          className="p-2 rounded-xl bg-black/30 border border-white/10 text-amber-300 hover:bg-white/10 transition-all cursor-pointer active:scale-90"
+        >
+          <Home className="w-4 h-4" />
         </button>
 
         {/* Rules & Settings Drawer Trigger */}

@@ -5,8 +5,10 @@ import {
   RotateCcw,
   Volume2,
   VolumeX,
+  Home
 } from 'lucide-react';
 
+import LandingPage from './components/LandingPage';
 import PuzzleBoard from './components/PuzzleBoard';
 import LiveHUD from './components/LiveHUD';
 import ResultsModal from './components/ResultsModal';
@@ -20,9 +22,11 @@ import {
   generateDerangement,
   svgToNormalizedDataUrl,
   calculateLiveScore,
-  evaluateResultsTier
+  evaluateResultsTier,
+  processImageFile
 } from './utils/canvas';
 import { sound } from './utils/sound';
+import { saveHighScore } from './utils/storage';
 
 export default function App() {
   // Game Configuration & Rules State
@@ -31,8 +35,8 @@ export default function App() {
   const [currentPreset, setCurrentPreset] = useState(PRESET_IMAGES[0]); // Jungle Safari Express
   const [normalizedImageSrc, setNormalizedImageSrc] = useState('');
 
-  // Game Play State
-  const [gameState, setGameState] = useState('setup'); // 'setup' | 'playing' | 'paused' | 'won' | 'lost'
+  // Game Lifecycle State: starts on 'landing' screen (not autoplaying)
+  const [gameState, setGameState] = useState('landing'); // 'landing' | 'playing' | 'paused' | 'won' | 'lost'
   const [tiles, setTiles] = useState([]);
   const [moves, setMoves] = useState(0);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
@@ -64,7 +68,12 @@ export default function App() {
     }
   }, []);
 
-  // Initialize board with guaranteed 0% initial correct placement (Derangement)
+  // Preload initial preset on mount without auto-starting the game
+  useEffect(() => {
+    loadPresetArtwork(PRESET_IMAGES[0]);
+  }, [loadPresetArtwork]);
+
+  // Initialize and shuffle board with guaranteed 0% initial correct placement (Derangement)
   const initializeBoard = useCallback((gridSize, customTime = null) => {
     const totalTiles = gridSize * gridSize;
     const initialTiles = generateDerangement(totalTiles);
@@ -82,18 +91,20 @@ export default function App() {
     setResultsTierInfo(null);
   }, [rules.customTimeLimit, currentDifficulty]);
 
-  // Initial mount: load first preset and start board
-  useEffect(() => {
-    let mounted = true;
-    loadPresetArtwork(PRESET_IMAGES[0]).then(() => {
-      if (mounted) {
-        initializeBoard(DIFFICULTIES[0].gridSize);
-      }
-    });
-    return () => {
-      mounted = false;
-    };
-  }, [initializeBoard, loadPresetArtwork]);
+  // Start game from Landing Page
+  const handleStartGame = useCallback(async () => {
+    if (!normalizedImageSrc && currentPreset) {
+      await loadPresetArtwork(currentPreset);
+    }
+    initializeBoard(currentDifficulty.gridSize);
+  }, [normalizedImageSrc, currentPreset, loadPresetArtwork, initializeBoard, currentDifficulty.gridSize]);
+
+  // Return to Landing Page
+  const handleReturnHome = useCallback(() => {
+    if (timerRef.current) clearInterval(timerRef.current);
+    setGameState('landing');
+    setIsResultsOpen(false);
+  }, []);
 
   // Handle Game Over (Timeout or Moves Exceeded)
   const handleGameOver = useCallback((reason) => {
@@ -138,9 +149,26 @@ export default function App() {
       correctCount: currentDifficulty.pieceCount,
     });
 
+    // Save high score to localStorage
+    saveHighScore({
+      difficultyId: currentDifficulty.id,
+      score: calculateLiveScore({
+        basePoints: currentDifficulty.basePoints,
+        gridSize: currentDifficulty.gridSize,
+        moves: moves + 1,
+        timeRemaining,
+        isCountdown: rules.timerMode === 'countdown',
+        elapsedSeconds,
+        correctCount: currentDifficulty.pieceCount,
+        totalTiles: currentDifficulty.pieceCount,
+      }),
+      moves: moves + 1,
+      timeSeconds: elapsedSeconds,
+    });
+
     setResultsTierInfo(tier);
     setIsResultsOpen(true);
-  }, [rules, currentDifficulty, elapsedSeconds, moves]);
+  }, [rules, currentDifficulty, elapsedSeconds, moves, timeRemaining]);
 
   // Timer Tick Hook (Accurate with pause and cleanup)
   useEffect(() => {
@@ -169,7 +197,7 @@ export default function App() {
     };
   }, [gameState, isSettingsOpen, rules.timerMode, handleGameOver]);
 
-  // Dynamically calculate live score via memoization (cleaner than setting state in effect)
+  // Dynamically calculate live score via memoization
   const liveScore = useMemo(() => {
     const correctPieces = tiles.filter((t, i) => t.correctIndex === i).length;
     return calculateLiveScore({
@@ -195,13 +223,11 @@ export default function App() {
       newTiles[slotA] = tileB;
       newTiles[slotB] = tileA;
 
-      // Increment moves counter
       const nextMoves = moves + 1;
       setMoves(nextMoves);
 
       // Check move limit violation
       if (rules.moveLimitEnabled && rules.customMoveLimit > 0 && nextMoves >= rules.customMoveLimit) {
-        // Check if this swap actually won the game before calling game over
         const isNowSolved = newTiles.every((t, idx) => t.correctIndex === idx);
         if (isNowSolved) {
           setTimeout(handleGameWon, 250);
@@ -211,7 +237,7 @@ export default function App() {
         return newTiles;
       }
 
-      // Check win condition (all tiles match their correctIndex)
+      // Check win condition
       const isNowSolved = newTiles.every((t, idx) => t.correctIndex === idx);
       if (isNowSolved) {
         setTimeout(handleGameWon, 250);
@@ -224,17 +250,21 @@ export default function App() {
   // Difficulty Selector Handler
   const handleSelectDifficulty = (diff) => {
     setCurrentDifficulty(diff);
-    initializeBoard(diff.gridSize, diff.defaultTimeLimit);
+    if (gameState === 'playing') {
+      initializeBoard(diff.gridSize, diff.defaultTimeLimit);
+    }
   };
 
   // Preset Selection Handler
   const handleSelectPreset = async (preset) => {
     setCurrentPreset(preset);
     await loadPresetArtwork(preset);
-    initializeBoard(currentDifficulty.gridSize);
+    if (gameState === 'playing') {
+      initializeBoard(currentDifficulty.gridSize);
+    }
   };
 
-  // Custom Image Upload Handler
+  // Custom Image Upload Handlers
   const handleCustomImageUploaded = (dataUrl, fileName) => {
     setCurrentPreset({
       id: 'custom-upload',
@@ -244,7 +274,18 @@ export default function App() {
       badge: 'Custom',
     });
     setNormalizedImageSrc(dataUrl);
-    initializeBoard(currentDifficulty.gridSize);
+    if (gameState === 'playing') {
+      initializeBoard(currentDifficulty.gridSize);
+    }
+  };
+
+  const handleCustomImageUploadedFile = async (file) => {
+    try {
+      const dataUrl = await processImageFile(file);
+      handleCustomImageUploaded(dataUrl, file.name);
+    } catch (err) {
+      console.error('Failed to process image file:', err);
+    }
   };
 
   // Adaptive CTAs for Results Modal
@@ -268,7 +309,6 @@ export default function App() {
     initializeBoard(currentDifficulty.gridSize);
   };
 
-  // Count correct pieces
   const correctCount = tiles.filter((t, i) => t.correctIndex === i).length;
   const isSolved = gameState === 'won';
 
@@ -287,9 +327,13 @@ export default function App() {
         }`}
       >
         {/* Brand Logo & Name */}
-        <div className="flex items-center gap-2.5">
+        <div
+          onClick={handleReturnHome}
+          className="flex items-center gap-2.5 cursor-pointer group"
+          title="Return to Main Menu"
+        >
           <div
-            className={`p-2 rounded-xl border flex items-center justify-center shadow ${
+            className={`p-2 rounded-xl border flex items-center justify-center shadow transition-transform group-hover:scale-105 ${
               rules.theme === 'artisan-wood'
                 ? 'bg-[#d8a873] border-[#e8c89b] text-[#24170d]'
                 : 'bg-amber-500 border-amber-400 text-slate-950'
@@ -301,7 +345,7 @@ export default function App() {
             <h1 className="font-extrabold text-base md:text-lg tracking-tight flex items-center gap-2">
               <span>SolveIt</span>
               <span className="text-[10px] font-mono uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30">
-                yourjitendra
+                Wooden Craft Studio
               </span>
             </h1>
             <p className="text-[11px] opacity-60 hidden sm:block">
@@ -310,8 +354,21 @@ export default function App() {
           </div>
         </div>
 
-        {/* Desktop Quick Header Actions */}
+        {/* Top Header Actions */}
         <div className="flex items-center gap-2">
+          {/* Main Menu Button (Visible during gameplay) */}
+          {gameState !== 'landing' && (
+            <button
+              type="button"
+              onClick={handleReturnHome}
+              title="Return to Main Menu"
+              className="flex items-center gap-1.5 py-1.5 px-3 rounded-xl bg-black/20 hover:bg-black/30 border border-white/10 text-amber-300 font-semibold text-xs transition-all cursor-pointer"
+            >
+              <Home className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Menu</span>
+            </button>
+          )}
+
           {/* Sound Toggle */}
           <button
             type="button"
@@ -322,16 +379,18 @@ export default function App() {
             {rules.soundEnabled ? <Volume2 className="w-4 h-4 text-emerald-400" /> : <VolumeX className="w-4 h-4 text-rose-400" />}
           </button>
 
-          {/* Quick Shuffle */}
-          <button
-            type="button"
-            onClick={() => initializeBoard(currentDifficulty.gridSize)}
-            title="Shuffle Board"
-            className="hidden sm:flex items-center gap-1.5 py-1.5 px-3 rounded-xl bg-black/20 hover:bg-black/30 border border-white/10 text-sky-300 font-semibold text-xs transition-all cursor-pointer"
-          >
-            <RotateCcw className="w-3.5 h-3.5" />
-            <span>Shuffle</span>
-          </button>
+          {/* Quick Shuffle (Visible during active gameplay) */}
+          {gameState !== 'landing' && (
+            <button
+              type="button"
+              onClick={() => initializeBoard(currentDifficulty.gridSize)}
+              title="Shuffle Board"
+              className="hidden sm:flex items-center gap-1.5 py-1.5 px-3 rounded-xl bg-black/20 hover:bg-black/30 border border-white/10 text-sky-300 font-semibold text-xs transition-all cursor-pointer"
+            >
+              <RotateCcw className="w-3.5 h-3.5" />
+              <span>Shuffle</span>
+            </button>
+          )}
 
           {/* Settings Trigger */}
           <button
@@ -340,152 +399,164 @@ export default function App() {
             className="flex items-center gap-1.5 py-1.5 px-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs transition-all shadow-md cursor-pointer active:scale-95"
           >
             <Settings className="w-3.5 h-3.5" />
-            <span>Game Rules</span>
+            <span>Rules</span>
           </button>
         </div>
       </header>
 
-      {/* Main Responsive Playground */}
-      <main className="flex-1 w-full max-w-7xl mx-auto p-3 md:p-6 lg:p-8 flex flex-col justify-center">
-        {/* Mobile Layout (< 768px): Compact 100dvh Fit */}
-        <div className="flex md:hidden flex-col items-center justify-between w-full max-w-[440px] mx-auto gap-2.5">
-          {/* Compact Top Live HUD */}
-          <LiveHUD
-            timerMode={rules.timerMode}
-            timeRemaining={timeRemaining}
-            elapsedSeconds={elapsedSeconds}
-            timeLimit={rules.customTimeLimit || currentDifficulty.defaultTimeLimit}
-            moves={moves}
-            maxMoves={rules.moveLimitEnabled ? rules.customMoveLimit : 0}
-            correctCount={correctCount}
-            totalPieces={currentDifficulty.pieceCount}
-            liveScore={liveScore}
-            isPaused={gameState === 'paused'}
-            isPeeking={isPeeking}
-            soundEnabled={rules.soundEnabled}
-            onToggleSound={() => setRules((prev) => ({ ...prev, soundEnabled: !prev.soundEnabled }))}
-            onTogglePause={() => setGameState((prev) => (prev === 'playing' ? 'paused' : 'playing'))}
-            onRestart={() => initializeBoard(currentDifficulty.gridSize)}
-            onPeekStart={() => setIsPeeking(true)}
-            onPeekEnd={() => setIsPeeking(false)}
-            theme={rules.theme}
-          />
-
-          {/* Centered Wooden Puzzle Board */}
-          <div className="w-[92vw] max-w-[420px] aspect-square flex items-center justify-center my-1">
-            <PuzzleBoard
-              gridSize={currentDifficulty.gridSize}
-              tiles={tiles}
-              imageSrc={normalizedImageSrc}
-              isLockedPiecesEnabled={rules.lockCorrectPieces}
-              isPeeking={isPeeking}
-              isSolved={isSolved}
-              isGameActive={gameState === 'playing'}
-              onSwapTiles={handleSwapTiles}
-              theme={rules.theme}
-            />
-          </div>
-
-          {/* Bottom Dock with Quick Actions */}
-          <BottomDock
-            currentDifficulty={currentDifficulty}
+      {/* Main Content Area */}
+      <main className="flex-1 w-full flex flex-col justify-center">
+        {/* STATE 1: Landing Page / Welcome Screen */}
+        {gameState === 'landing' ? (
+          <LandingPage
+            selectedPreset={currentPreset}
+            onSelectPreset={handleSelectPreset}
+            selectedDifficulty={currentDifficulty}
             onSelectDifficulty={handleSelectDifficulty}
-            onRestart={() => initializeBoard(currentDifficulty.gridSize)}
-            onOpenSettings={() => setIsSettingsOpen(true)}
-            onPeekStart={() => setIsPeeking(true)}
-            onPeekEnd={() => setIsPeeking(false)}
-            isPeeking={isPeeking}
+            selectedMode={rules.timerMode}
+            onChangeMode={(m) => setRules((prev) => ({ ...prev, timerMode: m }))}
+            onCustomImageUploaded={handleCustomImageUploadedFile}
+            onStartGame={handleStartGame}
             theme={rules.theme}
           />
-        </div>
+        ) : (
+          /* STATE 2: Active Gameplay Board & HUD */
+          <div className="w-full max-w-7xl mx-auto p-3 md:p-6 lg:p-8 flex flex-col justify-center">
+            {/* Mobile Layout (< 768px): Compact 100dvh Fit */}
+            <div className="flex md:hidden flex-col items-center justify-between w-full max-w-[440px] mx-auto gap-2.5">
+              <LiveHUD
+                timerMode={rules.timerMode}
+                timeRemaining={timeRemaining}
+                elapsedSeconds={elapsedSeconds}
+                timeLimit={rules.customTimeLimit || currentDifficulty.defaultTimeLimit}
+                moves={moves}
+                maxMoves={rules.moveLimitEnabled ? rules.customMoveLimit : 0}
+                correctCount={correctCount}
+                totalPieces={currentDifficulty.pieceCount}
+                liveScore={liveScore}
+                isPaused={gameState === 'paused'}
+                isPeeking={isPeeking}
+                soundEnabled={rules.soundEnabled}
+                onToggleSound={() => setRules((prev) => ({ ...prev, soundEnabled: !prev.soundEnabled }))}
+                onTogglePause={() => setGameState((prev) => (prev === 'playing' ? 'paused' : 'playing'))}
+                onRestart={() => initializeBoard(currentDifficulty.gridSize)}
+                onPeekStart={() => setIsPeeking(true)}
+                onPeekEnd={() => setIsPeeking(false)}
+                theme={rules.theme}
+              />
 
-        {/* Desktop Layout (>= 768px): Two-Column Studio Layout */}
-        <div className="hidden md:grid md:grid-cols-12 gap-6 lg:gap-8 items-start">
-          {/* Left / Center Stage: Interactive Wooden Puzzle Board */}
-          <div className="md:col-span-7 lg:col-span-8 flex flex-col items-center justify-center">
-            {/* Board Sub-header / Difficulty Quick Bar */}
-            <div className="w-full max-w-[520px] flex items-center justify-between mb-3 px-1">
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-bold opacity-75 uppercase tracking-wider">Difficulty:</span>
-                <div className="flex items-center gap-1 bg-black/30 p-1 rounded-xl border border-white/10">
-                  {DIFFICULTIES.map((diff) => {
-                    const isSelected = diff.gridSize === currentDifficulty.gridSize;
-                    return (
-                      <button
-                        key={diff.id}
-                        type="button"
-                        onClick={() => handleSelectDifficulty(diff)}
-                        className={`py-1 px-3 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                          isSelected
-                            ? 'bg-amber-500 text-slate-950 shadow-md'
-                            : 'text-white/70 hover:text-white hover:bg-white/10'
-                        }`}
-                      >
-                        {diff.name} ({diff.gridSize}&times;{diff.gridSize})
-                      </button>
-                    );
-                  })}
+              <div className="w-[92vw] max-w-[420px] aspect-square flex items-center justify-center my-1">
+                <PuzzleBoard
+                  gridSize={currentDifficulty.gridSize}
+                  tiles={tiles}
+                  imageSrc={normalizedImageSrc}
+                  isLockedPiecesEnabled={rules.lockCorrectPieces}
+                  isPeeking={isPeeking}
+                  isSolved={isSolved}
+                  isGameActive={gameState === 'playing'}
+                  onSwapTiles={handleSwapTiles}
+                  theme={rules.theme}
+                />
+              </div>
+
+              <BottomDock
+                currentDifficulty={currentDifficulty}
+                onSelectDifficulty={handleSelectDifficulty}
+                onRestart={() => initializeBoard(currentDifficulty.gridSize)}
+                onOpenSettings={() => setIsSettingsOpen(true)}
+                onReturnHome={handleReturnHome}
+                onPeekStart={() => setIsPeeking(true)}
+                onPeekEnd={() => setIsPeeking(false)}
+                isPeeking={isPeeking}
+                theme={rules.theme}
+              />
+            </div>
+
+            {/* Desktop Layout (>= 768px): Two-Column Studio Layout */}
+            <div className="hidden md:grid md:grid-cols-12 gap-6 lg:gap-8 items-start">
+              {/* Left / Center Stage: Interactive Wooden Puzzle Board */}
+              <div className="md:col-span-7 lg:col-span-8 flex flex-col items-center justify-center">
+                <div className="w-full max-w-[520px] flex items-center justify-between mb-3 px-1">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold opacity-75 uppercase tracking-wider">Difficulty:</span>
+                    <div className="flex items-center gap-1 bg-black/30 p-1 rounded-xl border border-white/10">
+                      {DIFFICULTIES.map((diff) => {
+                        const isSelected = diff.gridSize === currentDifficulty.gridSize;
+                        return (
+                          <button
+                            key={diff.id}
+                            type="button"
+                            onClick={() => handleSelectDifficulty(diff)}
+                            className={`py-1 px-3 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                              isSelected
+                                ? 'bg-amber-500 text-slate-950 shadow-md'
+                                : 'text-white/70 hover:text-white hover:bg-white/10'
+                            }`}
+                          >
+                            {diff.name} ({diff.gridSize}&times;{diff.gridSize})
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  <div className="text-xs font-mono text-amber-300">
+                    {currentDifficulty.pieceCount} Pieces
+                  </div>
+                </div>
+
+                <PuzzleBoard
+                  gridSize={currentDifficulty.gridSize}
+                  tiles={tiles}
+                  imageSrc={normalizedImageSrc}
+                  isLockedPiecesEnabled={rules.lockCorrectPieces}
+                  isPeeking={isPeeking}
+                  isSolved={isSolved}
+                  isGameActive={gameState === 'playing'}
+                  onSwapTiles={handleSwapTiles}
+                  theme={rules.theme}
+                />
+
+                <div className="w-full max-w-[520px] mt-3 px-2 flex items-center justify-between text-xs opacity-60">
+                  <span>Method A: Click two pieces to swap</span>
+                  <span>Method B: Drag & drop pieces smoothly</span>
                 </div>
               </div>
 
-              <div className="text-xs font-mono text-amber-300">
-                {currentDifficulty.pieceCount} Pieces
+              {/* Right Sidebar: Live HUD, Image Ingestion, and Preset Selector */}
+              <div className="md:col-span-5 lg:col-span-4 flex flex-col gap-4">
+                <LiveHUD
+                  timerMode={rules.timerMode}
+                  timeRemaining={timeRemaining}
+                  elapsedSeconds={elapsedSeconds}
+                  timeLimit={rules.customTimeLimit || currentDifficulty.defaultTimeLimit}
+                  moves={moves}
+                  maxMoves={rules.moveLimitEnabled ? rules.customMoveLimit : 0}
+                  correctCount={correctCount}
+                  totalPieces={currentDifficulty.pieceCount}
+                  liveScore={liveScore}
+                  isPaused={gameState === 'paused'}
+                  isPeeking={isPeeking}
+                  soundEnabled={rules.soundEnabled}
+                  onToggleSound={() => setRules((prev) => ({ ...prev, soundEnabled: !prev.soundEnabled }))}
+                  onTogglePause={() => setGameState((prev) => (prev === 'playing' ? 'paused' : 'playing'))}
+                  onRestart={() => initializeBoard(currentDifficulty.gridSize)}
+                  onPeekStart={() => setIsPeeking(true)}
+                  onPeekEnd={() => setIsPeeking(false)}
+                  theme={rules.theme}
+                />
+
+                <ImageSelector
+                  currentPresetId={currentPreset?.id}
+                  onSelectPreset={handleSelectPreset}
+                  onCustomImageUploaded={handleCustomImageUploaded}
+                  currentImageSrc={normalizedImageSrc}
+                  theme={rules.theme}
+                />
               </div>
             </div>
-
-            {/* The Wooden Board */}
-            <PuzzleBoard
-              gridSize={currentDifficulty.gridSize}
-              tiles={tiles}
-              imageSrc={normalizedImageSrc}
-              isLockedPiecesEnabled={rules.lockCorrectPieces}
-              isPeeking={isPeeking}
-              isSolved={isSolved}
-              isGameActive={gameState === 'playing'}
-              onSwapTiles={handleSwapTiles}
-              theme={rules.theme}
-            />
-
-            <div className="w-full max-w-[520px] mt-3 px-2 flex items-center justify-between text-xs opacity-60">
-              <span>Method A: Click two pieces to swap</span>
-              <span>Method B: Drag & drop pieces smoothly</span>
-            </div>
           </div>
-
-          {/* Right Sidebar: Live HUD, Image Ingestion, and Preset Selector */}
-          <div className="md:col-span-5 lg:col-span-4 flex flex-col gap-4">
-            {/* Live HUD Panel */}
-            <LiveHUD
-              timerMode={rules.timerMode}
-              timeRemaining={timeRemaining}
-              elapsedSeconds={elapsedSeconds}
-              timeLimit={rules.customTimeLimit || currentDifficulty.defaultTimeLimit}
-              moves={moves}
-              maxMoves={rules.moveLimitEnabled ? rules.customMoveLimit : 0}
-              correctCount={correctCount}
-              totalPieces={currentDifficulty.pieceCount}
-              liveScore={liveScore}
-              isPaused={gameState === 'paused'}
-              isPeeking={isPeeking}
-              soundEnabled={rules.soundEnabled}
-              onToggleSound={() => setRules((prev) => ({ ...prev, soundEnabled: !prev.soundEnabled }))}
-              onTogglePause={() => setGameState((prev) => (prev === 'playing' ? 'paused' : 'playing'))}
-              onRestart={() => initializeBoard(currentDifficulty.gridSize)}
-              onPeekStart={() => setIsPeeking(true)}
-              onPeekEnd={() => setIsPeeking(false)}
-              theme={rules.theme}
-            />
-
-            {/* Image Selector & Custom Uploader Card */}
-            <ImageSelector
-              currentPresetId={currentPreset?.id}
-              onSelectPreset={handleSelectPreset}
-              onCustomImageUploaded={handleCustomImageUploaded}
-              currentImageSrc={normalizedImageSrc}
-              theme={rules.theme}
-            />
-          </div>
-        </div>
+        )}
       </main>
 
       {/* Rules & Setup Drawer */}
@@ -498,7 +569,7 @@ export default function App() {
         theme={rules.theme}
       />
 
-      {/* Personalized Results Modal (4 Visibility Conditions) */}
+      {/* Personalized Results Modal */}
       <ResultsModal
         isOpen={isResultsOpen}
         tierInfo={resultsTierInfo}
@@ -513,6 +584,7 @@ export default function App() {
         onNextDifficulty={handleNextDifficulty}
         onRetryWithBonus={handleRetryWithBonus}
         onSwitchToCasual={handleSwitchToCasual}
+        onReturnHome={handleReturnHome}
         theme={rules.theme}
       />
     </div>

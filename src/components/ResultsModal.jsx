@@ -15,7 +15,8 @@ import {
   Sparkles,
   HelpCircle,
   Play,
-  X
+  X,
+  Home
 } from 'lucide-react';
 import { sound } from '../utils/sound';
 
@@ -33,6 +34,7 @@ export default function ResultsModal({
   onNextDifficulty,
   onRetryWithBonus,
   onSwitchToCasual,
+  onReturnHome,
   theme = 'artisan-wood',
 }) {
   useEffect(() => {
@@ -40,7 +42,6 @@ export default function ResultsModal({
 
     if (isWon) {
       sound.playVictory();
-      // Fire celebratory confetti burst for wins
       const count = tierInfo?.tierId === 'gold' ? 120 : 60;
       confetti({
         particleCount: count,
@@ -69,7 +70,6 @@ export default function ResultsModal({
   const isBronze = tierInfo.tierId === 'bronze';
   const isLoss = tierInfo.tierId === 'loss';
 
-  // Tier Badge & Color Styling
   const getTierIcon = () => {
     if (isGold) return <Zap className="w-8 h-8 text-amber-300" />;
     if (isSilver) return <Award className="w-8 h-8 text-sky-300" />;
@@ -101,7 +101,6 @@ export default function ResultsModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md animate-fadeIn">
-      {/* Modal Card */}
       <div
         className={`relative w-full max-w-md rounded-3xl overflow-hidden border-2 shadow-2xl transition-all duration-300 transform scale-100 ${
           theme === 'artisan-wood'
@@ -109,7 +108,6 @@ export default function ResultsModal({
             : 'bg-slate-900 border-slate-700 text-slate-100'
         }`}
       >
-        {/* Close Button */}
         <button
           type="button"
           onClick={onClose}
@@ -118,7 +116,6 @@ export default function ResultsModal({
           <X className="w-4 h-4" />
         </button>
 
-        {/* Decorative Top Gradient Header */}
         <div className={`p-6 text-center border-b bg-gradient-to-b ${getTierBannerClass()}`}>
           <div className="inline-flex p-3 rounded-2xl bg-black/40 border border-white/10 shadow-lg mb-3">
             {getTierIcon()}
@@ -134,11 +131,8 @@ export default function ResultsModal({
           </p>
         </div>
 
-        {/* Content Body */}
         <div className="p-6 space-y-4">
-          {/* Stat Grid */}
           <div className="grid grid-cols-2 gap-3">
-            {/* Final Score */}
             <div
               className={`p-3 rounded-2xl border flex flex-col ${
                 theme === 'artisan-wood'
@@ -155,7 +149,6 @@ export default function ResultsModal({
               </div>
             </div>
 
-            {/* Time Taken */}
             <div
               className={`p-3 rounded-2xl border flex flex-col ${
                 theme === 'artisan-wood'
@@ -172,7 +165,6 @@ export default function ResultsModal({
               </div>
             </div>
 
-            {/* Moves Made */}
             <div
               className={`p-3 rounded-2xl border flex flex-col ${
                 theme === 'artisan-wood'
@@ -189,7 +181,6 @@ export default function ResultsModal({
               </div>
             </div>
 
-            {/* Difficulty Tier */}
             <div
               className={`p-3 rounded-2xl border flex flex-col ${
                 theme === 'artisan-wood'
@@ -207,7 +198,6 @@ export default function ResultsModal({
             </div>
           </div>
 
-          {/* Time Remaining Bonus Notice if applicable */}
           {timeRemaining > 0 && isWon && (
             <div className="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 text-xs flex items-center justify-between">
               <span>Time Remaining Bonus:</span>
@@ -215,7 +205,6 @@ export default function ResultsModal({
             </div>
           )}
 
-          {/* Special Condition Tips / Breakdown */}
           {tierInfo.tip && (
             <div className="p-3 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-200 text-xs flex items-start gap-2">
               <HelpCircle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
@@ -233,9 +222,7 @@ export default function ResultsModal({
             </div>
           )}
 
-          {/* Action CTAs */}
           <div className="pt-2 space-y-2">
-            {/* Condition 1: Gold Tier CTA */}
             {isGold && (
               <button
                 type="button"
@@ -247,7 +234,6 @@ export default function ResultsModal({
               </button>
             )}
 
-            {/* Condition 2: Silver Tier CTA */}
             {isSilver && (
               <button
                 type="button"
@@ -259,7 +245,6 @@ export default function ResultsModal({
               </button>
             )}
 
-            {/* Condition 3: Bronze Tier CTA */}
             {isBronze && (
               <button
                 type="button"
@@ -271,7 +256,6 @@ export default function ResultsModal({
               </button>
             )}
 
-            {/* Condition 4: Loser State CTAs */}
             {isLoss && (
               <div className="space-y-2">
                 <button
@@ -293,7 +277,6 @@ export default function ResultsModal({
               </div>
             )}
 
-            {/* Secondary Actions (Share & Replay) */}
             <div className="flex gap-2 pt-1">
               {!isLoss && (
                 <button
@@ -307,11 +290,19 @@ export default function ResultsModal({
               )}
               <button
                 type="button"
+                onClick={onReturnHome}
+                className="flex-1 py-2.5 px-3 rounded-xl font-medium text-xs border border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/20 text-amber-200 flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95"
+              >
+                <Home className="w-3.5 h-3.5 text-amber-400" />
+                <span>Menu</span>
+              </button>
+              <button
+                type="button"
                 onClick={handleShare}
                 className="flex-1 py-2.5 px-3 rounded-xl font-medium text-xs border border-white/20 hover:bg-white/10 text-slate-200 flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95"
               >
                 <Share2 className="w-3.5 h-3.5" />
-                <span>Share Result</span>
+                <span>Share</span>
               </button>
             </div>
           </div>
