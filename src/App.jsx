@@ -34,6 +34,7 @@ export default function App() {
   const [currentDifficulty, setCurrentDifficulty] = useState(DIFFICULTIES[0]); // Easy (3x3)
   const [currentPreset, setCurrentPreset] = useState(PRESET_IMAGES[0]); // Jungle Safari Express
   const [normalizedImageSrc, setNormalizedImageSrc] = useState('');
+  const [customImage, setCustomImage] = useState(null); // { name, dataUrl }
 
   // Game Lifecycle State: starts on 'landing' screen (not autoplaying)
   const [gameState, setGameState] = useState('landing'); // 'landing' | 'playing' | 'paused' | 'won' | 'lost'
@@ -93,7 +94,12 @@ export default function App() {
 
   // Start game from Landing Page
   const handleStartGame = useCallback(async () => {
-    if (!normalizedImageSrc && currentPreset) {
+    if (currentPreset?.id === 'custom-upload' || currentPreset?.imageSrc) {
+      const src = currentPreset.imageSrc || normalizedImageSrc;
+      if (src && src !== normalizedImageSrc) {
+        setNormalizedImageSrc(src);
+      }
+    } else if (!normalizedImageSrc && currentPreset?.svg) {
       await loadPresetArtwork(currentPreset);
     }
     initializeBoard(currentDifficulty.gridSize);
@@ -258,7 +264,11 @@ export default function App() {
   // Preset Selection Handler
   const handleSelectPreset = async (preset) => {
     setCurrentPreset(preset);
-    await loadPresetArtwork(preset);
+    if (preset.id === 'custom-upload' || preset.imageSrc) {
+      setNormalizedImageSrc(preset.imageSrc);
+    } else if (preset.svg) {
+      await loadPresetArtwork(preset);
+    }
     if (gameState === 'playing') {
       initializeBoard(currentDifficulty.gridSize);
     }
@@ -266,13 +276,16 @@ export default function App() {
 
   // Custom Image Upload Handlers
   const handleCustomImageUploaded = (dataUrl, fileName) => {
-    setCurrentPreset({
+    const customPresetObj = {
       id: 'custom-upload',
       name: fileName || 'Custom Photo',
       category: 'Uploaded',
       description: 'Custom 1:1 normalized image',
       badge: 'Custom',
-    });
+      imageSrc: dataUrl,
+    };
+    setCustomImage({ name: fileName || 'Custom Photo', dataUrl });
+    setCurrentPreset(customPresetObj);
     setNormalizedImageSrc(dataUrl);
     if (gameState === 'playing') {
       initializeBoard(currentDifficulty.gridSize);
@@ -410,6 +423,8 @@ export default function App() {
         {gameState === 'landing' ? (
           <LandingPage
             selectedPreset={currentPreset}
+            currentImageSrc={normalizedImageSrc}
+            customImage={customImage}
             onSelectPreset={handleSelectPreset}
             selectedDifficulty={currentDifficulty}
             onSelectDifficulty={handleSelectDifficulty}

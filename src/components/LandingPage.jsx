@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import {
   Play,
   Puzzle,
@@ -19,6 +19,8 @@ import { sound } from '../utils/sound';
 
 export default function LandingPage({
   selectedPreset,
+  currentImageSrc = '',
+  customImage = null,
   onSelectPreset,
   selectedDifficulty,
   onSelectDifficulty,
@@ -28,8 +30,27 @@ export default function LandingPage({
   onStartGame,
   theme = 'artisan-wood',
 }) {
+  const fileInputRef = useRef(null);
   const highScores = getHighScores();
   const currentBest = highScores[selectedDifficulty.id];
+
+  const isCustomSelected =
+    selectedPreset?.id === 'custom-upload' ||
+    Boolean(!selectedPreset?.svg && (selectedPreset?.imageSrc || currentImageSrc));
+
+  const displayImageSrc =
+    (isCustomSelected && (selectedPreset?.imageSrc || currentImageSrc || customImage?.dataUrl)) ||
+    selectedPreset?.imageSrc ||
+    currentImageSrc;
+
+  const hasCustomImage = Boolean(
+    customImage?.dataUrl ||
+    (selectedPreset?.id === 'custom-upload' && (selectedPreset?.imageSrc || currentImageSrc))
+  );
+
+  const customImageSrc =
+    customImage?.dataUrl ||
+    (selectedPreset?.id === 'custom-upload' ? (selectedPreset?.imageSrc || currentImageSrc) : null);
 
   const handleStart = () => {
     sound.playPickup();
@@ -88,16 +109,32 @@ export default function LandingPage({
           />
         </div>
 
-        {/* Board 1: Active Front Board */}
+        {/* Board 1: Active Front Board (Top Frame) */}
         <div
-          onClick={() => onSelectPreset(PRESET_IMAGES[0])}
-          className="absolute w-56 sm:w-88 aspect-[4/3] rounded-xl sm:rounded-3xl bg-wood-grain wood-board-frame border-3 sm:border-4 border-[#854724] p-2 sm:p-3 transform translate-y-2 rotate-0 hover:scale-[1.02] transition-all duration-300 cursor-pointer shadow-2xl shadow-black/90 z-10"
+          onDragOver={(e) => e.preventDefault()}
+          onDrop={(e) => {
+            e.preventDefault();
+            if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+              onCustomImageUploaded(e.dataTransfer.files[0]);
+            }
+          }}
+          className="absolute w-56 sm:w-88 aspect-[4/3] rounded-xl sm:rounded-3xl bg-wood-grain wood-board-frame border-3 sm:border-4 border-[#854724] p-2 sm:p-3 transform translate-y-2 rotate-0 hover:scale-[1.02] transition-all duration-300 shadow-2xl shadow-black/90 z-10"
         >
-          <div
-            className="w-full h-full rounded-lg sm:rounded-2xl overflow-hidden wood-tray-recess bg-black/60 relative group"
-            dangerouslySetInnerHTML={{ __html: selectedPreset?.svg || PRESET_IMAGES[0].svg }}
-          />
-          <div className="absolute bottom-2.5 sm:bottom-4 left-3 sm:left-5 bg-[#0a0604]/85 backdrop-blur-md px-2.5 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-bold text-[#e0985c] border border-[#6b3a1d]/60 flex items-center gap-1 shadow-lg">
+          <div className="w-full h-full rounded-lg sm:rounded-2xl overflow-hidden wood-tray-recess bg-black/60 relative group flex items-center justify-center">
+            {isCustomSelected && displayImageSrc ? (
+              <img
+                src={displayImageSrc}
+                alt={selectedPreset?.name || 'Custom Artwork'}
+                className="w-full h-full object-cover rounded-lg sm:rounded-2xl"
+              />
+            ) : (
+              <div
+                className="w-full h-full"
+                dangerouslySetInnerHTML={{ __html: selectedPreset?.svg || PRESET_IMAGES[0].svg }}
+              />
+            )}
+          </div>
+          <div className="absolute bottom-2.5 sm:bottom-4 left-3 sm:left-5 bg-[#0a0604]/85 backdrop-blur-md px-2.5 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-bold text-[#e0985c] border border-[#6b3a1d]/60 flex items-center gap-1 shadow-lg pointer-events-none">
             <Check className="w-3 h-3 text-[#d97706]" />
             <span className="truncate max-w-[140px] sm:max-w-none">
               {selectedPreset?.name || 'Jungle Safari'}
@@ -123,24 +160,26 @@ export default function LandingPage({
             </span>
             <label className="text-[11px] sm:text-xs font-semibold text-[#e0985c] hover:text-[#f5b882] flex items-center gap-1 cursor-pointer">
               <Upload className="w-3 h-3" />
-              <span>Upload Photo</span>
+              <span>{hasCustomImage ? 'Upload Different' : 'Upload Photo'}</span>
               <input
+                ref={fileInputRef}
                 type="file"
                 accept="image/jpeg,image/png,image/webp"
                 className="hidden"
                 onChange={(e) => {
                   if (e.target.files && e.target.files[0]) {
                     onCustomImageUploaded(e.target.files[0]);
+                    e.target.value = '';
                   }
                 }}
               />
             </label>
           </div>
 
-          {/* 5 Presets in 1 compact responsive row */}
-          <div className="grid grid-cols-5 gap-1.5 sm:gap-2">
+          {/* 5 Presets + Custom Slot in 1 clean responsive layout */}
+          <div className="grid grid-cols-3 sm:grid-cols-6 gap-1.5 sm:gap-2">
             {PRESET_IMAGES.map((preset) => {
-              const isSelected = selectedPreset?.id === preset.id;
+              const isSelected = !isCustomSelected && selectedPreset?.id === preset.id;
               return (
                 <button
                   key={preset.id}
@@ -167,6 +206,60 @@ export default function LandingPage({
                 </button>
               );
             })}
+
+            {/* Slot 6: Custom Upload Thumbnail or Device Upload Button */}
+            {hasCustomImage && customImageSrc ? (
+              <button
+                type="button"
+                onClick={() =>
+                  onSelectPreset({
+                    id: 'custom-upload',
+                    name: customImage?.name || selectedPreset?.name || 'Custom Photo',
+                    category: 'Uploaded',
+                    description: 'Custom 1:1 normalized image',
+                    badge: 'Custom',
+                    imageSrc: customImageSrc,
+                  })
+                }
+                className={`relative flex flex-col items-center rounded-xl p-1 border transition-all cursor-pointer overflow-hidden ${
+                  isCustomSelected
+                    ? 'border-[#d98b50] bg-[#5c341b]/35 ring-2 ring-[#d98b50]/60 shadow-lg scale-[1.03]'
+                    : 'border-[#2d180b] hover:border-[#522d16] bg-[#0c0704]/80 hover:bg-[#180d07]'
+                }`}
+              >
+                <div className="w-full aspect-square rounded-lg overflow-hidden bg-black/60 mb-0.5 sm:mb-1 border border-[#522d16]">
+                  <img
+                    src={customImageSrc}
+                    alt="Custom Upload"
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <span className="text-[9px] sm:text-[11px] font-semibold truncate w-full text-center leading-tight text-[#e0985c]">
+                  Custom
+                </span>
+                {isCustomSelected && (
+                  <div className="absolute top-1 right-1 bg-[#d97706] text-slate-950 p-0.5 rounded-full shadow">
+                    <Check className="w-2 h-2 text-slate-950 stroke-[3]" />
+                  </div>
+                )}
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="relative flex flex-col items-center justify-center rounded-xl p-1 border border-dashed border-[#542d17] hover:border-[#8a4e28] bg-[#0c0704]/60 hover:bg-[#180d07] transition-all cursor-pointer overflow-hidden group"
+              >
+                <div className="w-full aspect-square rounded-lg flex flex-col items-center justify-center bg-[#180d07]/60 mb-0.5 sm:mb-1 group-hover:scale-105 transition-transform">
+                  <Upload className="w-4 h-4 sm:w-5 sm:h-5 text-[#e0985c] mb-0.5" />
+                  <span className="text-[8px] uppercase tracking-wider text-[#e0985c] font-bold">
+                    Upload
+                  </span>
+                </div>
+                <span className="text-[9px] sm:text-[11px] font-semibold truncate w-full text-center leading-tight opacity-75">
+                  Device
+                </span>
+              </button>
+            )}
           </div>
         </div>
 
