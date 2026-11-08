@@ -51,16 +51,16 @@ export default function ImageSelector({
     <div
       className={`rounded-2xl p-4 border transition-all duration-300 ${
         theme === 'artisan-wood'
-          ? 'bg-[#2a1a0f]/90 border-[#69421f]/50 text-[#f5ebd9] shadow-lg backdrop-blur-md'
+          ? 'bg-[#140b07]/95 border-[#381e10] text-[#f7efe6] shadow-xl backdrop-blur-md'
           : 'bg-slate-900/80 border-slate-700/60 text-slate-100 shadow-xl backdrop-blur-md'
       }`}
     >
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
-          <ImageIcon className="w-4 h-4 text-amber-400" />
-          <h3 className="font-bold text-sm">Puzzle Artwork & Theme</h3>
+          <ImageIcon className="w-4 h-4 text-[#e0985c]" />
+          <h3 className="font-bold text-sm text-[#f7efe6]">Puzzle Artwork</h3>
         </div>
-        <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-300 border border-amber-500/20">
+        <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded-full bg-[#5c341b]/35 text-[#e0985c] border border-[#8a4e28]/50">
           1:1 Normalized
         </span>
       </div>
@@ -76,25 +76,25 @@ export default function ImageSelector({
               onClick={() => onSelectPreset(preset)}
               className={`group relative flex flex-col items-center rounded-xl p-1.5 border text-left transition-all cursor-pointer overflow-hidden ${
                 isSelected
-                  ? 'border-amber-400 bg-amber-500/15 ring-2 ring-amber-400/50 shadow-md'
-                  : 'border-white/10 hover:border-white/30 bg-black/20 hover:bg-black/30'
+                  ? 'border-[#d98b50] bg-[#5c341b]/35 ring-2 ring-[#d98b50]/60 shadow-md'
+                  : 'border-[#2d180b] hover:border-[#522d16] bg-[#0c0704]/80 hover:bg-[#180d07]'
               }`}
             >
               <div
-                className="w-full aspect-square rounded-lg overflow-hidden relative bg-black/30 mb-1.5"
+                className="w-full aspect-square rounded-lg overflow-hidden relative bg-black/60 mb-1.5"
                 dangerouslySetInnerHTML={{ __html: preset.svg }}
               />
               <div className="w-full px-1">
-                <span className="text-xs font-semibold block truncate leading-tight">
+                <span className="text-xs font-semibold block truncate leading-tight text-[#f7efe6]">
                   {preset.name}
                 </span>
-                <span className="text-[10px] opacity-60 block truncate">
+                <span className="text-[10px] opacity-60 block truncate text-[#e0d0c3]">
                   {preset.category}
                 </span>
               </div>
               {isSelected && (
-                <div className="absolute top-2 right-2 bg-amber-500 text-slate-950 p-0.5 rounded-full shadow-md">
-                  <Check className="w-3 h-3" />
+                <div className="absolute top-2 right-2 bg-[#d97706] text-slate-950 p-0.5 rounded-full shadow-md">
+                  <Check className="w-3 h-3 text-slate-950 stroke-[3]" />
                 </div>
               )}
             </button>
@@ -110,8 +110,8 @@ export default function ImageSelector({
         onClick={() => fileInputRef.current?.click()}
         className={`relative border-2 border-dashed rounded-xl p-3 text-center transition-all cursor-pointer ${
           isDraggingOver
-            ? 'border-amber-400 bg-amber-500/10 scale-[1.01]'
-            : 'border-white/20 hover:border-amber-400/50 bg-black/20 hover:bg-black/30'
+            ? 'border-[#d98b50] bg-[#5c341b]/20 scale-[1.01]'
+            : 'border-[#3a2012] hover:border-[#8a4e28]/80 bg-[#0c0704]/70 hover:bg-[#150c07]'
         }`}
       >
         <input
@@ -123,13 +123,13 @@ export default function ImageSelector({
         />
 
         <div className="flex flex-col items-center justify-center gap-1.5 py-1">
-          <div className="p-2 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20">
+          <div className="p-2 rounded-full bg-[#5c341b]/35 text-[#e0985c] border border-[#8a4e28]/50">
             <Upload className="w-4 h-4" />
           </div>
-          <div className="text-xs font-semibold">
+          <div className="text-xs font-semibold text-[#f7efe6]">
             {isProcessing ? 'Normalizing Canvas Square...' : 'Drop Custom Photo Here, or Click to Browse'}
           </div>
-          <p className="text-[10px] opacity-60">
+          <p className="text-[10px] opacity-60 text-[#e0d0c3]">
             Auto center-cropped to 1:1 square (up to 1080x1080px) &bull; JPG, PNG, WebP
           </p>
         </div>
@@ -144,9 +144,9 @@ export default function ImageSelector({
 
       {/* Mini Reference Preview Thumbnail */}
       {currentImageSrc && (
-        <div className="mt-3 pt-3 border-t border-white/10 flex items-center justify-between">
+        <div className="mt-3 pt-3 border-t border-[#381e10] flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="w-10 h-10 rounded-lg overflow-hidden border border-white/20 shadow">
+            <div className="w-10 h-10 rounded-lg overflow-hidden border border-[#5a331c] shadow">
               <img
                 src={currentImageSrc}
                 alt="Mini Target Preview"
@@ -154,8 +154,8 @@ export default function ImageSelector({
               />
             </div>
             <div>
-              <span className="text-xs font-semibold block">Goal Reference</span>
-              <span className="text-[10px] opacity-60 block">Solved Target Alignment</span>
+              <span className="text-xs font-semibold block text-[#f7efe6]">Goal Reference</span>
+              <span className="text-[10px] opacity-60 block text-[#e0d0c3]">Target Alignment</span>
             </div>
           </div>
           <span className="text-[10px] text-emerald-400 flex items-center gap-1 font-mono">

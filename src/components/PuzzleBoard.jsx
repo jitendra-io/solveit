@@ -214,11 +214,11 @@ export default function PuzzleBoard({
 
   return (
     <div className="relative flex flex-col items-center justify-center w-full select-none">
-      {/* Outer Wooden Tray Frame (Screenshot inspired) */}
+      {/* Outer Wooden Tray Frame (Black & Brown Woodcraft) */}
       <div
         className={`relative w-full max-w-[460px] md:max-w-[500px] lg:max-w-[520px] aspect-square rounded-2xl md:rounded-3xl p-3 md:p-4.5 transition-all duration-300 ${
           theme === 'artisan-wood'
-            ? 'bg-wood-grain wood-board-frame border-4 border-[#c29663]'
+            ? 'bg-wood-grain wood-board-frame border-4 border-[#522c17]'
             : 'bg-slate-900/90 border border-slate-700/80 shadow-2xl backdrop-blur-xl'
         }`}
       >
@@ -229,7 +229,7 @@ export default function PuzzleBoard({
           onPointerCancel={handlePointerCancel}
           className={`relative w-full h-full rounded-xl md:rounded-2xl overflow-hidden touch-puzzle-board ${
             theme === 'artisan-wood'
-              ? 'wood-tray-recess bg-[#3d2714]/85 border-2 border-[#805329]/40'
+              ? 'wood-tray-recess bg-[#120a06]/95 border-2 border-[#331b0e]'
               : 'bg-slate-950 border border-slate-800'
           }`}
           style={{
@@ -378,17 +378,17 @@ export default function PuzzleBoard({
               alt="Puzzle Reference Preview"
               className="w-full h-full object-cover"
             />
-            <div className="absolute top-3 left-3 bg-slate-900/90 text-amber-300 border border-amber-500/40 px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1.5 shadow-lg">
-              <Eye className="w-3.5 h-3.5 text-amber-400" />
+            <div className="absolute top-3 left-3 bg-[#0a0604]/90 text-[#e0985c] border border-[#6b3a1d]/60 px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1.5 shadow-xl">
+              <Eye className="w-3.5 h-3.5 text-[#e0985c]" />
               <span>Reference Preview</span>
             </div>
           </div>
 
           {/* Solved Celebration Overlay */}
           {isSolved && (
-            <div className="absolute inset-0 pointer-events-none z-20 flex flex-col items-center justify-center bg-black/20 backdrop-blur-[1px] animate-fadeIn">
-              <div className="bg-amber-500/90 text-slate-950 font-bold px-4 py-2 rounded-full shadow-2xl flex items-center gap-2 border-2 border-white/40 transform scale-110 animate-bounce">
-                <CheckCircle2 className="w-5 h-5" />
+            <div className="absolute inset-0 pointer-events-none z-20 flex flex-col items-center justify-center bg-black/40 backdrop-blur-[1px] animate-fadeIn">
+              <div className="bg-gradient-to-r from-[#8c522b] to-[#b36b37] text-[#fff8f2] font-bold px-4 py-2 rounded-full shadow-2xl flex items-center gap-2 border-2 border-[#e0985c]/60 transform scale-110 animate-bounce">
+                <CheckCircle2 className="w-5 h-5 text-emerald-300" />
                 <span>Puzzle Completed!</span>
               </div>
             </div>

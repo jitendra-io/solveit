@@ -54,23 +54,23 @@ export default function RulesDrawer({
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end bg-black/60 backdrop-blur-sm animate-fadeIn">
-      {/* Drawer Container */}
+      {/* Drawer Container (Black & Brown Woodcraft) */}
       <div
         className={`w-full max-w-md h-full flex flex-col border-l shadow-2xl transition-all duration-300 ${
           theme === 'artisan-wood'
-            ? 'bg-[#21150c] border-[#633e1e] text-[#f7ede1]'
+            ? 'bg-[#120a06] border-[#381e10] text-[#f7efe6]'
             : 'bg-slate-900 border-slate-700 text-slate-100'
         }`}
       >
         {/* Drawer Header */}
-        <div className="p-4 md:p-5 border-b border-white/10 flex items-center justify-between">
+        <div className="p-4 md:p-5 border-b border-[#2d180b] flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="p-2 rounded-xl bg-amber-500/20 text-amber-400 border border-amber-500/30">
+            <div className="p-2 rounded-xl bg-[#5c341b]/35 text-[#e0985c] border border-[#8a4e28]/50">
               <Sliders className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="font-bold text-base md:text-lg">Game Rules & Configuration</h2>
-              <p className="text-xs opacity-60">Fine-tune gameplay mechanics & tiers</p>
+              <h2 className="font-bold text-base md:text-lg text-[#f7efe6]">Game Rules & Configuration</h2>
+              <p className="text-xs opacity-60 text-[#e0d0c3]">Fine-tune gameplay mechanics & tiers</p>
             </div>
           </div>
           <button
@@ -83,13 +83,13 @@ export default function RulesDrawer({
         </div>
 
         {/* Tab Switcher */}
-        <div className="flex border-b border-white/10 px-4 pt-2 gap-2 text-xs font-semibold">
+        <div className="flex border-b border-[#2d180b] px-4 pt-2 gap-2 text-xs font-semibold">
           <button
             type="button"
             onClick={() => setActiveTab('rules')}
             className={`pb-2.5 px-3 border-b-2 transition-colors cursor-pointer ${
               activeTab === 'rules'
-                ? 'border-amber-400 text-amber-400'
+                ? 'border-[#d98b50] text-[#e0985c]'
                 : 'border-transparent text-white/60 hover:text-white'
             }`}
           >
@@ -100,7 +100,7 @@ export default function RulesDrawer({
             onClick={() => setActiveTab('thresholds')}
             className={`pb-2.5 px-3 border-b-2 transition-colors cursor-pointer ${
               activeTab === 'thresholds'
-                ? 'border-amber-400 text-amber-400'
+                ? 'border-[#d98b50] text-[#e0985c]'
                 : 'border-transparent text-white/60 hover:text-white'
             }`}
           >
@@ -111,7 +111,7 @@ export default function RulesDrawer({
             onClick={() => setActiveTab('json')}
             className={`pb-2.5 px-3 border-b-2 transition-colors cursor-pointer flex items-center gap-1.5 ${
               activeTab === 'json'
-                ? 'border-amber-400 text-amber-400'
+                ? 'border-[#d98b50] text-[#e0985c]'
                 : 'border-transparent text-white/60 hover:text-white'
             }`}
           >

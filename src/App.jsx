@@ -322,7 +322,7 @@ export default function App() {
       <header
         className={`w-full py-2.5 px-4 md:px-8 border-b transition-colors z-20 flex items-center justify-between ${
           rules.theme === 'artisan-wood'
-            ? 'bg-[#21150c]/90 border-[#633e1e]/60 shadow-md backdrop-blur-md'
+            ? 'bg-[#0c0805]/95 border-[#2b170c]/80 shadow-lg backdrop-blur-md'
             : 'bg-slate-900/80 border-slate-800 shadow-md backdrop-blur-md'
         }`}
       >
@@ -335,7 +335,7 @@ export default function App() {
           <div
             className={`p-2 rounded-xl border flex items-center justify-center shadow transition-transform group-hover:scale-105 ${
               rules.theme === 'artisan-wood'
-                ? 'bg-[#d8a873] border-[#e8c89b] text-[#24170d]'
+                ? 'bg-[#5c341b] border-[#8a4e28] text-[#fbeee4] shadow-md shadow-black/40'
                 : 'bg-amber-500 border-amber-400 text-slate-950'
             }`}
           >
@@ -344,7 +344,7 @@ export default function App() {
           <div>
             <h1 className="font-extrabold text-base md:text-lg tracking-tight flex items-center gap-2">
               <span>SolveIt</span>
-              <span className="text-[10px] font-mono uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30">
+              <span className="text-[10px] font-mono uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-[#5c341b]/35 text-[#e0985c] border border-[#8a4e28]/50">
                 Wooden Craft Studio
               </span>
             </h1>
@@ -362,7 +362,7 @@ export default function App() {
               type="button"
               onClick={handleReturnHome}
               title="Return to Main Menu"
-              className="flex items-center gap-1.5 py-1.5 px-3 rounded-xl bg-black/20 hover:bg-black/30 border border-white/10 text-amber-300 font-semibold text-xs transition-all cursor-pointer"
+              className="flex items-center gap-1.5 py-1.5 px-3 rounded-xl bg-[#170e08]/90 hover:bg-[#26170e] border border-[#422614] text-[#e0985c] font-semibold text-xs transition-all cursor-pointer shadow"
             >
               <Home className="w-3.5 h-3.5" />
               <span className="hidden sm:inline">Menu</span>
@@ -374,7 +374,7 @@ export default function App() {
             type="button"
             onClick={() => setRules((prev) => ({ ...prev, soundEnabled: !prev.soundEnabled }))}
             title={rules.soundEnabled ? 'Mute Audio' : 'Enable Audio'}
-            className="p-2 rounded-xl bg-black/20 hover:bg-black/30 border border-white/10 text-white/80 hover:text-white transition-all cursor-pointer"
+            className="p-2 rounded-xl bg-[#170e08]/90 hover:bg-[#26170e] border border-[#422614] text-white/80 hover:text-white transition-all cursor-pointer shadow"
           >
             {rules.soundEnabled ? <Volume2 className="w-4 h-4 text-emerald-400" /> : <VolumeX className="w-4 h-4 text-rose-400" />}
           </button>
@@ -385,7 +385,7 @@ export default function App() {
               type="button"
               onClick={() => initializeBoard(currentDifficulty.gridSize)}
               title="Shuffle Board"
-              className="hidden sm:flex items-center gap-1.5 py-1.5 px-3 rounded-xl bg-black/20 hover:bg-black/30 border border-white/10 text-sky-300 font-semibold text-xs transition-all cursor-pointer"
+              className="hidden sm:flex items-center gap-1.5 py-1.5 px-3 rounded-xl bg-[#170e08]/90 hover:bg-[#26170e] border border-[#422614] text-[#e0985c] font-semibold text-xs transition-all cursor-pointer shadow"
             >
               <RotateCcw className="w-3.5 h-3.5" />
               <span>Shuffle</span>
@@ -396,7 +396,7 @@ export default function App() {
           <button
             type="button"
             onClick={() => setIsSettingsOpen(true)}
-            className="flex items-center gap-1.5 py-1.5 px-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs transition-all shadow-md cursor-pointer active:scale-95"
+            className="flex items-center gap-1.5 py-1.5 px-3 rounded-xl bg-gradient-to-r from-[#8c522b] to-[#b36b37] hover:from-[#9c5c31] hover:to-[#c2763f] text-[#faf1e8] font-bold text-xs transition-all shadow-md shadow-black/50 border border-[#d98b50]/30 cursor-pointer active:scale-95"
           >
             <Settings className="w-3.5 h-3.5" />
             <span>Rules</span>

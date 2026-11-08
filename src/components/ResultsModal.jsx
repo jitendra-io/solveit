@@ -104,7 +104,7 @@ export default function ResultsModal({
       <div
         className={`relative w-full max-w-md max-h-[92dvh] overflow-y-auto rounded-3xl border-2 shadow-2xl transition-all duration-300 transform scale-100 ${
           theme === 'artisan-wood'
-            ? 'bg-[#24170d] border-[#8a572c] text-[#f7ede1]'
+            ? 'bg-[#120a06] border-[#4a2816] text-[#f7efe6] shadow-black/90'
             : 'bg-slate-900 border-slate-700 text-slate-100'
         }`}
       >
