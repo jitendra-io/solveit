@@ -421,9 +421,9 @@ export default function App() {
           />
         ) : (
           /* STATE 2: Active Gameplay Board & HUD */
-          <div className="w-full max-w-7xl mx-auto p-3 md:p-6 lg:p-8 flex flex-col justify-center">
-            {/* Mobile Layout (< 768px): Compact 100dvh Fit */}
-            <div className="flex md:hidden flex-col items-center justify-between w-full max-w-[440px] mx-auto gap-2.5">
+          <div className="w-full max-w-7xl mx-auto flex flex-col justify-center">
+            {/* Mobile Layout (< 768px): Strictly locked to 100dvh without vertical scrolling */}
+            <div className="flex md:hidden flex-col items-center justify-between w-full h-[calc(100dvh-54px)] max-h-[calc(100dvh-54px)] px-2 py-1.5 overflow-hidden select-none">
               <LiveHUD
                 timerMode={rules.timerMode}
                 timeRemaining={timeRemaining}
@@ -445,7 +445,7 @@ export default function App() {
                 theme={rules.theme}
               />
 
-              <div className="w-[92vw] max-w-[420px] aspect-square flex items-center justify-center my-1">
+              <div className="w-[min(92vw,calc(100dvh-200px))] max-w-[400px] aspect-square flex items-center justify-center my-auto">
                 <PuzzleBoard
                   gridSize={currentDifficulty.gridSize}
                   tiles={tiles}
@@ -473,7 +473,7 @@ export default function App() {
             </div>
 
             {/* Desktop Layout (>= 768px): Two-Column Studio Layout */}
-            <div className="hidden md:grid md:grid-cols-12 gap-6 lg:gap-8 items-start">
+            <div className="hidden md:grid md:grid-cols-12 gap-6 lg:gap-8 items-start p-3 md:p-6 lg:p-8">
               {/* Left / Center Stage: Interactive Wooden Puzzle Board */}
               <div className="md:col-span-7 lg:col-span-8 flex flex-col items-center justify-center">
                 <div className="w-full max-w-[520px] flex items-center justify-between mb-3 px-1">

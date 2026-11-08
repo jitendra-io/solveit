@@ -325,6 +325,9 @@ export default function PuzzleBoard({
                       transition: slideTransition || undefined,
                       boxShadow: customBoxShadow,
                       zIndex,
+                      touchAction: 'none',
+                      userSelect: 'none',
+                      WebkitUserSelect: 'none',
                     }}
                   >
                     {/* Subtle wooden piece edge bevel highlight */}
