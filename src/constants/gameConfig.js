@@ -67,7 +67,7 @@ export const DEFAULT_GAME_RULES = {
   customMoveLimit: 0,     // 0 = unlimited
   lockCorrectPieces: false,
   soundEnabled: true,
+  showNumbers: true,      // toggleable corner numbering guide
   theme: 'artisan-wood',  // 'artisan-wood' | 'studio-dark'
   tierThresholds: { ...DEFAULT_TIER_THRESHOLDS },
 };
-

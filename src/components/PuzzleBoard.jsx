@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { Lock, Eye, CheckCircle2 } from 'lucide-react';
+import { Lock, Eye, CheckCircle2, ArrowLeftRight } from 'lucide-react';
 import { sound } from '../utils/sound';
 
 export default function PuzzleBoard({
@@ -20,8 +20,9 @@ export default function PuzzleBoard({
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const [hoverTargetSlot, setHoverTargetSlot] = useState(null);
 
-  // Sliding animation state for smooth FLIP / coordinate transitions
+  // Coordinated sliding & swapping animation states
   const [slidingPair, setSlidingPair] = useState(null); // { slotA, slotB, dx, dy }
+  const [settlingSlots, setSettlingSlots] = useState([]); // slots executing landing bounce
   const [justLockedId, setJustLockedId] = useState(null);
 
   const boardRef = useRef(null);
@@ -41,7 +42,7 @@ export default function PuzzleBoard({
     }
   }, [tiles, isLockedPiecesEnabled]);
 
-  // Execute smooth animated slide between two slots
+  // Execute remarkable coordinated 2-way swapping animation between blocks
   const animateAndSwap = useCallback((slotA, slotB) => {
     if (slotA === slotB || slidingPair) return;
 
@@ -49,7 +50,6 @@ export default function PuzzleBoard({
     const elB = tileRefs.current[slotB];
 
     if (!elA || !elB) {
-      // Fallback direct swap if elements aren't measured
       sound.playSlide(0.2);
       sound.playDrop();
       onSwapTiles(slotA, slotB);
@@ -62,22 +62,27 @@ export default function PuzzleBoard({
     const dx = rectB.left - rectA.left;
     const dy = rectB.top - rectA.top;
 
-    // Start slide animation & play wooden friction slide sound
+    // Start 2-way coordinated glide & play realistic wooden slide friction sound
     setSlidingPair({ slotA, slotB, dx, dy });
-    sound.playSlide(0.25);
+    sound.playSlide(0.28);
 
-    // After animation duration, finalize swap and play landing clack
+    // After transit duration, finalize tile state and trigger settling bounce
     setTimeout(() => {
       onSwapTiles(slotA, slotB);
       setSlidingPair(null);
+      setSettlingSlots([slotA, slotB]);
       sound.playDrop();
-    }, 240);
+
+      // Clear settle bounce after animation completes
+      setTimeout(() => {
+        setSettlingSlots([]);
+      }, 360);
+    }, 280);
   }, [slidingPair, onSwapTiles]);
 
-  // Method A: Tap-to-Swap (with visible smooth sliding)
+  // Method A: Tap-to-Swap (with choreographed 2-way sliding)
   const handleTileClick = (slotIndex) => {
     if (!isGameActive || isSolved || slidingPair) return;
-    // If user dragged, click is ignored
     if (hasMovedRef.current) return;
 
     const tileAtSlot = tiles[slotIndex];
@@ -96,14 +101,14 @@ export default function PuzzleBoard({
       // Tap again to deselect
       setSelectedSlot(null);
     } else {
-      // Tap second tile -> Visibly slide them into each other's slots!
+      // Tap second tile -> Visibly slide both blocks to trade places!
       const sourceSlot = selectedSlot;
       setSelectedSlot(null);
       animateAndSwap(sourceSlot, slotIndex);
     }
   };
 
-  // Method B: Pointer Drag-and-Swap with Real-Time Sliding
+  // Method B: Pointer Drag-and-Swap with 3D Tilt & Magnetic Target Reaction
   const handlePointerDown = (e, slotIndex) => {
     if (!isGameActive || isSolved || slidingPair) return;
 
@@ -138,13 +143,13 @@ export default function PuzzleBoard({
 
     if (distance > 5) {
       hasMovedRef.current = true;
-      // Play wooden sliding friction sound as block slides across board
+      // Play wooden sliding sound while dragging
       sound.playSlide(0.18);
     }
 
     setDragOffset({ x: dx, y: dy });
 
-    // Determine target slot underneath the dragged tile's center
+    // Detect target slot directly beneath pointer
     if (boardRef.current) {
       const boardRect = boardRef.current.getBoundingClientRect();
       const relativeX = e.clientX - boardRect.left;
@@ -162,7 +167,7 @@ export default function PuzzleBoard({
 
         if (targetSlot !== draggingSlot) {
           const targetTile = tiles[targetSlot];
-          // Can only swap if target is not a locked piece
+          // Can only swap if target is not locked
           if (!isLockedPiecesEnabled || (targetTile && targetTile.correctIndex !== targetSlot)) {
             setHoverTargetSlot(targetSlot);
             return;
@@ -191,11 +196,11 @@ export default function PuzzleBoard({
     }
 
     if (wasMoved && targetSlot !== null && targetSlot !== sourceSlot) {
-      // Visible slide transition to target slot
+      // Execute 2-way swapping transition
       animateAndSwap(sourceSlot, targetSlot);
       setSelectedSlot(null);
     } else if (wasMoved) {
-      // Snapped back to original slot
+      // Snapped back home to original socket
       sound.playDrop();
     }
   };
@@ -233,7 +238,7 @@ export default function PuzzleBoard({
         >
           {/* Active Puzzle Grid */}
           <div
-            className="grid w-full h-full p-1 gap-1 md:gap-1.5 transition-all duration-300"
+            className="grid w-full h-full p-1 gap-1 md:gap-1.5 transition-all duration-300 relative"
             style={{
               gridTemplateColumns: `repeat(${gridSize}, minmax(0, 1fr))`,
               gridTemplateRows: `repeat(${gridSize}, minmax(0, 1fr))`,
@@ -246,34 +251,39 @@ export default function PuzzleBoard({
               const isCorrect = tile.correctIndex === currentSlot;
               const isLocked = isLockedPiecesEnabled && isCorrect;
               const isJustLocked = justLockedId === tile.id;
+              const isSettling = settlingSlots.includes(currentSlot);
 
-              // Check if tile is in a visible sliding animation
+              // 3D dynamic tilt and shadow calculations for dragging
+              const tiltX = Math.max(-14, Math.min(14, dragOffset.y * -0.07));
+              const tiltY = Math.max(-14, Math.min(14, dragOffset.x * 0.07));
+              const tiltZ = Math.max(-8, Math.min(8, dragOffset.x * 0.04));
+
               let slideTransform = '';
               let slideTransition = '';
               let zIndex = 10;
+              let customBoxShadow = undefined;
 
               if (isDragging) {
-                // Real-time pointer sliding follow
-                slideTransform = `translate3d(${dragOffset.x}px, ${dragOffset.y}px, 0) scale(1.08)`;
+                // Real-time 3D floating follow
+                slideTransform = `translate3d(${dragOffset.x}px, ${dragOffset.y}px, 0) scale(1.12) rotate(${tiltZ}deg) rotateX(${tiltX}deg) rotateY(${tiltY}deg)`;
                 slideTransition = 'none';
                 zIndex = 50;
+                customBoxShadow = `${-dragOffset.x * 0.12}px ${18 + Math.abs(dragOffset.y * 0.08)}px 36px rgba(0,0,0,0.7), 0 0 0 3px #f59e0b, 0 0 25px rgba(245,158,11,0.7)`;
               } else if (slidingPair) {
                 if (slidingPair.slotA === currentSlot) {
-                  // Sliding to Slot B
-                  slideTransform = `translate3d(${slidingPair.dx}px, ${slidingPair.dy}px, 0)`;
-                  slideTransition = 'transform 240ms cubic-bezier(0.22, 1, 0.36, 1)';
-                  zIndex = 35;
+                  // Active Block A glides with elevated layer to Slot B
+                  slideTransform = `translate3d(${slidingPair.dx}px, ${slidingPair.dy}px, 0) scale(1.06)`;
+                  slideTransition = 'transform 280ms cubic-bezier(0.34, 1.35, 0.64, 1)';
+                  zIndex = 40;
                 } else if (slidingPair.slotB === currentSlot) {
-                  // Sliding to Slot A
-                  slideTransform = `translate3d(${-slidingPair.dx}px, ${-slidingPair.dy}px, 0)`;
-                  slideTransition = 'transform 240ms cubic-bezier(0.22, 1, 0.36, 1)';
+                  // Displaced Block B glides along tray groove to Slot A
+                  slideTransform = `translate3d(${-slidingPair.dx}px, ${-slidingPair.dy}px, 0) scale(0.96)`;
+                  slideTransition = 'transform 280ms cubic-bezier(0.34, 1.35, 0.64, 1)';
                   zIndex = 30;
                 }
               }
 
               // Background position percentage calculation for NxN grid
-              // posX = (col / (N - 1)) * 100%
-              // posY = (row / (N - 1)) * 100%
               const col = tile.correctIndex % gridSize;
               const row = Math.floor(tile.correctIndex / gridSize);
               const posX = gridSize > 1 ? (col / (gridSize - 1)) * 100 : 0;
@@ -281,47 +291,73 @@ export default function PuzzleBoard({
               const bgSize = `${gridSize * 100}% ${gridSize * 100}%`;
 
               return (
-                <div
-                  key={tile.id || currentSlot}
-                  ref={(el) => (tileRefs.current[currentSlot] = el)}
-                  onClick={() => handleTileClick(currentSlot)}
-                  onPointerDown={(e) => handlePointerDown(e, currentSlot)}
-                  onPointerUp={handlePointerUp}
-                  className={`relative rounded-lg md:rounded-xl cursor-pointer overflow-hidden wood-tile-piece ${
-                    isSelected ? 'wood-tile-selected' : ''
-                  } ${isDragging ? 'wood-tile-dragging' : ''} ${
-                    isHoverTarget ? 'wood-tile-target ring-2 ring-emerald-400' : ''
-                  } ${isJustLocked ? 'animate-emerald-snap' : ''} ${
-                    isLocked ? 'ring-2 ring-emerald-500/70' : ''
-                  }`}
-                  style={{
-                    backgroundImage: `url(${imageSrc})`,
-                    backgroundSize: bgSize,
-                    backgroundPosition: `${posX}% ${posY}%`,
-                    backgroundRepeat: 'no-repeat',
-                    transform: slideTransform || undefined,
-                    transition: slideTransition || undefined,
-                    zIndex,
-                  }}
-                >
-                  {/* Subtle wooden piece edge bevel highlight */}
-                  <div className="absolute inset-0 pointer-events-none rounded-lg border border-white/20 shadow-inner" />
-
-                  {/* Tile locked badge */}
-                  {isLocked && (
-                    <div className="absolute top-1 right-1 bg-emerald-600/90 text-white p-0.5 md:p-1 rounded-md shadow-md backdrop-blur-sm">
-                      <Lock className="w-3 h-3 md:w-3.5 md:h-3.5" />
+                <div key={tile.id || currentSlot} className="relative w-full h-full">
+                  {/* Empty carved wooden recess revealed when piece is lifted out */}
+                  {isDragging && (
+                    <div className="absolute inset-0 rounded-lg md:rounded-xl wood-empty-socket flex flex-col items-center justify-center border border-dashed border-amber-500/40 z-0">
+                      <div className="w-5 h-5 rounded-full border border-amber-500/30 bg-amber-500/10 flex items-center justify-center">
+                        <span className="text-[10px] font-mono text-amber-400/60 font-bold">
+                          {currentSlot + 1}
+                        </span>
+                      </div>
                     </div>
                   )}
 
-                  {/* Correct position subtle emerald indicator (when tile lock is disabled) */}
-                  {!isLocked && isCorrect && !isSolved && (
-                    <div className="absolute bottom-1 right-1 w-2 h-2 rounded-full bg-emerald-400/80 shadow-[0_0_6px_#10b981]" />
-                  )}
+                  {/* Physical Wooden Block */}
+                  <div
+                    ref={(el) => (tileRefs.current[currentSlot] = el)}
+                    onClick={() => handleTileClick(currentSlot)}
+                    onPointerDown={(e) => handlePointerDown(e, currentSlot)}
+                    onPointerUp={handlePointerUp}
+                    className={`relative w-full h-full rounded-lg md:rounded-xl cursor-pointer overflow-hidden wood-tile-piece ${
+                      isSelected ? 'wood-tile-selected' : ''
+                    } ${isDragging ? 'wood-tile-dragging' : ''} ${
+                      isHoverTarget ? 'wood-tile-target' : ''
+                    } ${isSettling ? 'animate-tile-settle' : ''} ${
+                      isJustLocked ? 'animate-emerald-snap' : ''
+                    } ${isLocked ? 'ring-2 ring-emerald-500/70' : ''}`}
+                    style={{
+                      backgroundImage: `url(${imageSrc})`,
+                      backgroundSize: bgSize,
+                      backgroundPosition: `${posX}% ${posY}%`,
+                      backgroundRepeat: 'no-repeat',
+                      transform: slideTransform || undefined,
+                      transition: slideTransition || undefined,
+                      boxShadow: customBoxShadow,
+                      zIndex,
+                    }}
+                  >
+                    {/* Subtle wooden piece edge bevel highlight */}
+                    <div className="absolute inset-0 pointer-events-none rounded-lg border border-white/20 shadow-inner" />
 
-                  {/* Tile index badge (subtle assistance for learning) */}
-                  <div className="absolute bottom-1 left-1 bg-black/40 text-white/70 text-[9px] md:text-[10px] font-mono px-1 rounded pointer-events-none">
-                    {tile.correctIndex + 1}
+                    {/* Magnetic target swap indicator badge */}
+                    {isHoverTarget && (
+                      <div className="absolute inset-0 bg-emerald-950/40 backdrop-blur-[1px] flex flex-col items-center justify-center pointer-events-none animate-fadeIn">
+                        <div className="p-1.5 rounded-full bg-emerald-500/90 text-slate-950 shadow-lg animate-pulse">
+                          <ArrowLeftRight className="w-4 h-4" />
+                        </div>
+                        <span className="text-[9px] font-bold text-emerald-200 mt-1 uppercase tracking-wider drop-shadow">
+                          Swap
+                        </span>
+                      </div>
+                    )}
+
+                    {/* Tile locked badge */}
+                    {isLocked && (
+                      <div className="absolute top-1 right-1 bg-emerald-600/90 text-white p-0.5 md:p-1 rounded-md shadow-md backdrop-blur-sm">
+                        <Lock className="w-3 h-3 md:w-3.5 md:h-3.5" />
+                      </div>
+                    )}
+
+                    {/* Correct position subtle emerald indicator */}
+                    {!isLocked && isCorrect && !isSolved && (
+                      <div className="absolute bottom-1 right-1 w-2 h-2 rounded-full bg-emerald-400/80 shadow-[0_0_6px_#10b981]" />
+                    )}
+
+                    {/* Corner tile index badge */}
+                    <div className="absolute bottom-1 left-1 bg-black/40 text-white/70 text-[9px] md:text-[10px] font-mono px-1 rounded pointer-events-none">
+                      {tile.correctIndex + 1}
+                    </div>
                   </div>
                 </div>
               );

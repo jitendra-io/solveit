@@ -1,4 +1,4 @@
-// Procedural Web Audio API sound synthesizer
+// Procedural Web Audio API sound synthesizer & Mobile Haptics
 // Provides rich organic wooden toy clacks, piece pickup thuds, wooden sliding friction,
 // correct placement snaps, and victory chords.
 // Zero external audio files required, completely offline-ready, responsive and latency-free.
@@ -26,15 +26,27 @@ class SoundEngine {
     this.enabled = val;
   }
 
+  // Trigger subtle device haptic feedback if supported (mobile touch)
+  triggerHaptic(pattern = 10) {
+    if (typeof window !== 'undefined' && 'navigator' in window && navigator.vibrate) {
+      try {
+        navigator.vibrate(pattern);
+      } catch {
+        // Ignore haptics errors
+      }
+    }
+  }
+
   // Realistic wooden tile friction slide sound
   playSlide(duration = 0.22) {
+    this.triggerHaptic(8);
     if (!this.enabled) return;
     this.init();
     if (!this.ctx) return;
 
     const now = Date.now();
     // Throttle slightly so rapid pointer moves don't saturate audio
-    if (now - this.lastSlideTime < 80) return;
+    if (now - this.lastSlideTime < 75) return;
     this.lastSlideTime = now;
 
     const t = this.ctx.currentTime;
@@ -45,7 +57,6 @@ class SoundEngine {
     const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
     const data = buffer.getChannelData(0);
     for (let i = 0; i < bufferSize; i++) {
-      // Pink/brown filtered noise
       data[i] = (Math.random() * 2 - 1) * 0.7;
     }
 
@@ -96,6 +107,7 @@ class SoundEngine {
 
   // Soft wooden pickup thud
   playPickup() {
+    this.triggerHaptic(12);
     if (!this.enabled) return;
     this.init();
     if (!this.ctx) return;
@@ -120,6 +132,7 @@ class SoundEngine {
 
   // Satisfying wooden tile swap clack / settle sound
   playDrop() {
+    this.triggerHaptic(18);
     if (!this.enabled) return;
     this.init();
     if (!this.ctx) return;
@@ -167,6 +180,7 @@ class SoundEngine {
 
   // Snappy locked/correct spot snap
   playCorrectSnap() {
+    this.triggerHaptic([20, 30, 20]);
     if (!this.enabled) return;
     this.init();
     if (!this.ctx) return;
@@ -189,6 +203,7 @@ class SoundEngine {
 
   // Celebratory victory fanfare chord sequence
   playVictory() {
+    this.triggerHaptic([40, 60, 40, 60, 100]);
     if (!this.enabled) return;
     this.init();
     if (!this.ctx) return;
@@ -219,6 +234,7 @@ class SoundEngine {
 
   // Timeout / Game over gentle thud
   playTimeout() {
+    this.triggerHaptic([80, 40, 80]);
     if (!this.enabled) return;
     this.init();
     if (!this.ctx) return;

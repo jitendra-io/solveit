@@ -21,7 +21,7 @@
   }
 }
 
-/* Wood grain texture generator using SVG */
+/* Wood grain texture generator */
 .bg-wood-grain {
   background-color: #dfba8e;
   background-image: 
@@ -59,8 +59,8 @@
 /* Realistic wooden puzzle board frame */
 .wood-board-frame {
   box-shadow: 
-    0 20px 45px -10px rgba(0, 0, 0, 0.7),
-    0 6px 16px -4px rgba(0, 0, 0, 0.5),
+    0 24px 50px -10px rgba(0, 0, 0, 0.75),
+    0 8px 20px -4px rgba(0, 0, 0, 0.55),
     inset 0 2px 4px rgba(255, 255, 255, 0.5),
     inset 0 -3px 6px rgba(90, 50, 20, 0.4);
 }
@@ -68,71 +68,111 @@
 /* Recessed puzzle well inside the wooden tray */
 .wood-tray-recess {
   box-shadow: 
-    inset 0 4px 12px rgba(0, 0, 0, 0.65),
-    inset 0 1px 3px rgba(0, 0, 0, 0.8),
+    inset 0 6px 16px rgba(0, 0, 0, 0.75),
+    inset 0 2px 4px rgba(0, 0, 0, 0.9),
     0 1px 2px rgba(255, 255, 255, 0.4);
+}
+
+/* Recessed empty socket revealed when a piece is lifted/dragged out */
+.wood-empty-socket {
+  background-color: #27170a;
+  box-shadow: 
+    inset 0 4px 8px rgba(0, 0, 0, 0.8),
+    inset 0 1px 2px rgba(0, 0, 0, 0.95),
+    0 0 0 1px rgba(255, 255, 255, 0.06);
 }
 
 /* Wooden puzzle tile tactile piece depth */
 .wood-tile-piece {
-  transition: transform 0.16s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.16s ease;
   box-shadow: 
-    0 2px 4px rgba(0, 0, 0, 0.35),
-    inset 0 1px 1px rgba(255, 255, 255, 0.3),
-    inset 0 -1px 2px rgba(0, 0, 0, 0.4);
+    0 2px 5px rgba(0, 0, 0, 0.4),
+    inset 0 1px 1.5px rgba(255, 255, 255, 0.35),
+    inset 0 -1.5px 2px rgba(0, 0, 0, 0.45);
+  will-change: transform, box-shadow;
 }
 
 .wood-tile-piece:hover {
   transform: translateY(-2px);
   box-shadow: 
-    0 6px 12px rgba(0, 0, 0, 0.45),
-    inset 0 1px 2px rgba(255, 255, 255, 0.4);
+    0 6px 14px rgba(0, 0, 0, 0.5),
+    inset 0 1px 2px rgba(255, 255, 255, 0.45);
 }
 
 .wood-tile-selected {
-  transform: translateY(-4px) scale(1.02);
+  transform: translateY(-5px) scale(1.03);
   box-shadow: 
-    0 10px 20px rgba(0, 0, 0, 0.55),
+    0 14px 25px rgba(0, 0, 0, 0.6),
     0 0 0 3px #f59e0b,
-    0 0 15px rgba(245, 158, 11, 0.6);
-  z-index: 20;
+    0 0 20px rgba(245, 158, 11, 0.65);
+  z-index: 25;
 }
 
+/* Dragging state with 3D elevation and realistic cast shadow */
 .wood-tile-dragging {
-  transform: scale(1.05);
   box-shadow: 
-    0 18px 30px rgba(0, 0, 0, 0.7),
-    0 0 0 3px #38bdf8,
-    0 0 20px rgba(56, 189, 248, 0.6);
-  z-index: 40;
-  opacity: 0.95;
+    0 28px 45px rgba(0, 0, 0, 0.75),
+    0 10px 18px rgba(0, 0, 0, 0.5),
+    0 0 0 3px #f59e0b,
+    0 0 25px rgba(245, 158, 11, 0.7);
   cursor: grabbing;
 }
 
+/* Target hover socket magnetic anticipation pulse */
+@keyframes magneticPulse {
+  0% {
+    box-shadow: inset 0 0 0 3px #10b981, 0 0 10px rgba(16, 185, 129, 0.5);
+  }
+  50% {
+    box-shadow: inset 0 0 0 3px #34d399, 0 0 22px rgba(52, 211, 153, 0.85);
+  }
+  100% {
+    box-shadow: inset 0 0 0 3px #10b981, 0 0 10px rgba(16, 185, 129, 0.5);
+  }
+}
+
 .wood-tile-target {
-  box-shadow: 
-    inset 0 0 0 3px #10b981,
-    0 0 16px rgba(16, 185, 129, 0.7);
+  animation: magneticPulse 1s ease-in-out infinite;
+  transform: scale(0.97);
+}
+
+/* Tactile wooden settle impact bounce when pieces land */
+@keyframes woodenSettle {
+  0% {
+    transform: scale(1.05);
+  }
+  45% {
+    transform: scale(0.97);
+  }
+  75% {
+    transform: scale(1.02);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.animate-tile-settle {
+  animation: woodenSettle 0.32s cubic-bezier(0.34, 1.3, 0.64, 1) forwards;
 }
 
 /* Emerald lock pulse animation when placed in correct spot */
 @keyframes emeraldSnap {
   0% {
-    transform: scale(0.96);
+    transform: scale(0.95);
     box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.9);
   }
-  50% {
-    transform: scale(1.04);
-    box-shadow: 0 0 0 6px rgba(16, 185, 129, 0.7), 0 0 20px rgba(16, 185, 129, 0.6);
+  40% {
+    transform: scale(1.06);
+    box-shadow: 0 0 0 8px rgba(16, 185, 129, 0.7), 0 0 24px rgba(16, 185, 129, 0.8);
   }
   100% {
     transform: scale(1);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.35);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.4);
   }
 }
 
 .animate-emerald-snap {
-  animation: emeraldSnap 0.45s ease-out forwards;
+  animation: emeraldSnap 0.45s cubic-bezier(0.34, 1.3, 0.64, 1) forwards;
 }
 
 /* Subtle wooden tile edge bevel */
