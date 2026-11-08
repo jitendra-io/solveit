@@ -10,7 +10,8 @@ import {
   Check,
   RotateCcw,
   AlertCircle,
-  HelpCircle
+  HelpCircle,
+  Hash
 } from 'lucide-react';
 import { DEFAULT_TIER_THRESHOLDS } from '../constants/gameConfig';
 
@@ -277,6 +278,38 @@ export default function RulesDrawer({
                       })
                     }
                     className="w-4 h-4 accent-emerald-500 cursor-pointer"
+                  />
+                </div>
+              </div>
+
+              {/* Show / Hide Piece Numbers Guide */}
+              <div
+                className={`p-4 rounded-2xl border ${
+                  theme === 'artisan-wood'
+                    ? 'bg-[#180f08] border-[#422915]'
+                    : 'bg-slate-950/70 border-slate-800'
+                }`}
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <Hash className="w-4 h-4 text-amber-400" />
+                    <div>
+                      <span className="font-bold text-sm block">Block Numbering Guides</span>
+                      <span className="text-[11px] opacity-60 block">
+                        Display order numbers (1-{currentDifficulty.pieceCount}) on each puzzle block
+                      </span>
+                    </div>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={rules.showNumbers}
+                    onChange={(e) =>
+                      onUpdateRules({
+                        ...rules,
+                        showNumbers: e.target.checked,
+                      })
+                    }
+                    className="w-4 h-4 accent-amber-500 cursor-pointer"
                   />
                 </div>
               </div>

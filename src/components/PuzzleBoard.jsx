@@ -7,6 +7,7 @@ export default function PuzzleBoard({
   tiles = [],
   imageSrc = '',
   isLockedPiecesEnabled = false,
+  showNumbers = true,
   isPeeking = false,
   isSolved = false,
   isGameActive = true,
@@ -295,11 +296,13 @@ export default function PuzzleBoard({
                   {/* Empty carved wooden recess revealed when piece is lifted out */}
                   {isDragging && (
                     <div className="absolute inset-0 rounded-lg md:rounded-xl wood-empty-socket flex flex-col items-center justify-center border border-dashed border-amber-500/40 z-0">
-                      <div className="w-5 h-5 rounded-full border border-amber-500/30 bg-amber-500/10 flex items-center justify-center">
-                        <span className="text-[10px] font-mono text-amber-400/60 font-bold">
-                          {currentSlot + 1}
-                        </span>
-                      </div>
+                      {showNumbers && (
+                        <div className="w-5 h-5 rounded-full border border-amber-500/30 bg-amber-500/10 flex items-center justify-center">
+                          <span className="text-[10px] font-mono text-amber-400/60 font-bold">
+                            {currentSlot + 1}
+                          </span>
+                        </div>
+                      )}
                     </div>
                   )}
 
@@ -357,10 +360,12 @@ export default function PuzzleBoard({
                       <div className="absolute bottom-1 right-1 w-2 h-2 rounded-full bg-emerald-400/80 shadow-[0_0_6px_#10b981]" />
                     )}
 
-                    {/* Corner tile index badge */}
-                    <div className="absolute bottom-1 left-1 bg-black/40 text-white/70 text-[9px] md:text-[10px] font-mono px-1 rounded pointer-events-none">
-                      {tile.correctIndex + 1}
-                    </div>
+                    {/* Corner tile index badge (Toggleable) */}
+                    {showNumbers && (
+                      <div className="absolute bottom-1 left-1 bg-black/60 text-white/90 text-[9px] md:text-[10px] font-mono font-bold px-1 rounded border border-white/10 shadow-sm pointer-events-none transition-opacity duration-200">
+                        {tile.correctIndex + 1}
+                      </div>
+                    )}
                   </div>
                 </div>
               );

@@ -5,7 +5,8 @@ import {
   RotateCcw,
   Volume2,
   VolumeX,
-  Home
+  Home,
+  Hash
 } from 'lucide-react';
 
 import LandingPage from './components/LandingPage';
@@ -466,6 +467,7 @@ export default function App() {
                   tiles={tiles}
                   imageSrc={normalizedImageSrc}
                   isLockedPiecesEnabled={rules.lockCorrectPieces}
+                  showNumbers={rules.showNumbers}
                   isPeeking={isPeeking}
                   isSolved={isSolved}
                   isGameActive={gameState === 'playing'}
@@ -483,6 +485,11 @@ export default function App() {
                 onPeekStart={() => setIsPeeking(true)}
                 onPeekEnd={() => setIsPeeking(false)}
                 isPeeking={isPeeking}
+                showNumbers={rules.showNumbers}
+                onToggleNumbers={() => {
+                  sound.playPickup();
+                  setRules((prev) => ({ ...prev, showNumbers: !prev.showNumbers }));
+                }}
                 theme={rules.theme}
               />
             </div>
@@ -515,8 +522,28 @@ export default function App() {
                     </div>
                   </div>
 
-                  <div className="text-xs font-mono text-amber-300">
-                    {currentDifficulty.pieceCount} Pieces
+                  <div className="flex items-center gap-2.5">
+                    {/* Instant Toggle Numbers Button (While Solving) */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        sound.playPickup();
+                        setRules((prev) => ({ ...prev, showNumbers: !prev.showNumbers }));
+                      }}
+                      title={rules.showNumbers ? 'Remove numbers from puzzle blocks' : 'Show numbers on puzzle blocks'}
+                      className={`py-1 px-2.5 rounded-lg text-xs font-bold border flex items-center gap-1.5 transition-all cursor-pointer ${
+                        rules.showNumbers
+                          ? 'bg-[#5c341b]/60 border-[#8a4e28] text-[#f5d7b5] shadow-sm hover:bg-[#733f1f]'
+                          : 'bg-black/40 border-white/10 text-white/50 hover:text-white/80'
+                      }`}
+                    >
+                      <Hash className="w-3.5 h-3.5 text-[#e0985c]" />
+                      <span>{rules.showNumbers ? 'Numbers: ON' : 'Numbers: OFF'}</span>
+                    </button>
+
+                    <div className="text-xs font-mono text-amber-300">
+                      {currentDifficulty.pieceCount} Pieces
+                    </div>
                   </div>
                 </div>
 
@@ -525,6 +552,7 @@ export default function App() {
                   tiles={tiles}
                   imageSrc={normalizedImageSrc}
                   isLockedPiecesEnabled={rules.lockCorrectPieces}
+                  showNumbers={rules.showNumbers}
                   isPeeking={isPeeking}
                   isSolved={isSolved}
                   isGameActive={gameState === 'playing'}
